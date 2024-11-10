@@ -1,6 +1,8 @@
 #ifndef JUMPLISTTESTER_H_
 #define JUMPLISTTESTER_H_
 
+#include <string>
+
 class JumpListTester {
 public:
 	JumpListTester();
