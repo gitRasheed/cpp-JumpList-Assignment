@@ -11,8 +11,8 @@ Node::Node(const string& s, Node* next, Node* jump, int gap) {
 }
 
 Node::~Node() {
-	// IMPLEMENT ME
-
+	next_ = nullptr;
+	jump_ = nullptr;
 }
 
 
@@ -65,11 +65,10 @@ JumpList::JumpList(const int size, const string* arr) {
 }
 
 JumpList::~JumpList() {
-	Node* current = head_;
-	while (current != nullptr) {
-		Node* next = current->next_;
-		delete current;
-		current = next;
+	while (head_ != nullptr) {
+		Node* toDelete = head_;
+		head_ = head_->next_;
+		delete toDelete;
 	}
 }
 
@@ -290,119 +289,152 @@ bool JumpList::insert(const string& s) {
 bool JumpList::erase(const string& s) {
     if (head_ == nullptr) return false;
 
-    // Use fast lane like in find()
-    Node* current = head_;
-    Node* previousJump = nullptr;
-    while (current->jump_ != nullptr && current->jump_->data_ < s) {
-        previousJump = current;
-        current = current->jump_;
+    // Using find() pattern to locate the node
+    Node* jumpNode = head_;
+    Node* prevJump = nullptr;
+
+    // Fast lane traversal
+    while (jumpNode->jump_ != nullptr && jumpNode->jump_->data_ < s) {
+        prevJump = jumpNode;
+        jumpNode = jumpNode->jump_;
     }
 
-    // Find exact node
-    Node* previous = nullptr;
-    Node* target = current;
-    while (target != nullptr && target->data_ != s) {
-        previous = target;
-        target = target->next_;
+    // Slow lane traversal
+    Node* prev = nullptr;
+    Node* current = jumpNode;
+    while (current != nullptr && current->data_ != s) {
+        if (current->data_ > s) return false;
+        prev = current;
+        current = current->next_;
     }
 
-    if (target == nullptr) return false;
+    if (current == nullptr) return false;
 
-    bool isJumpNode = (target->jump_ != nullptr);
+    // Found node to delete
+    bool isJumpNode = (current->jump_ != nullptr);
 
-    // Handle head deletion
-    if (previous == nullptr) {
-        head_ = target->next_;
+    // Case 1: Removing head
+    if (prev == nullptr) {
+        head_ = current->next_;
+
         if (head_ != nullptr) {
+            // Transfer jump pointer if head was jump node
             if (isJumpNode) {
-                head_->jump_ = target->jump_;
-                // Calculate nodes to next jump or end
+                head_->jump_ = current->jump_;
+
+                // Recount gap for new head segment
                 Node* temp = head_;
-                int count = 1;
-                while (temp->next_ != target->jump_) {
-                    count++;
-                    temp = temp->next_;
-                }
-                head_->gap_ = count;
-            } else {
-                Node* temp = head_;
-                int count = 1;
-                while (temp->next_ != nullptr) {
-                    count++;
-                    temp = temp->next_;
-                }
-                head_->gap_ = count;
-            }
-        }
-    } else {
-        previous->next_ = target->next_;
-
-        if (isJumpNode) {
-            // Find previous jump node
-            Node* jumpNode = head_;
-            while (jumpNode->jump_ != target) {
-                jumpNode = jumpNode->jump_;
-            }
-
-            // Remove from jump sequence
-            jumpNode->jump_ = target->jump_;
-
-            // Recalculate gaps after merging
-            Node* temp = jumpNode;
-            int segmentSize = 0;
-            while (temp != nullptr && temp != target->jump_) {
-                segmentSize++;
-                temp = temp->next_;
-            }
-
-            if (segmentSize > MAX_GAP_SIZE) {
-                // Split the segment
-                int firstHalf = (segmentSize + 1) / 2;
-                temp = jumpNode;
-                for (int i = 1; i < firstHalf; i++) {
-                    temp = temp->next_;
-                }
-                Node* newJump = temp->next_;
-                jumpNode->jump_ = newJump;
-                newJump->jump_ = target->jump_;
-                jumpNode->gap_ = firstHalf;
-                newJump->gap_ = segmentSize - firstHalf;
-            } else {
-                jumpNode->gap_ = segmentSize;
-            }
-
-            // Update remaining segments
-            Node* current = jumpNode->jump_;
-            while (current != nullptr) {
-                temp = current;
                 int count = 1;
                 while (temp->next_ != nullptr && temp->next_ != current->jump_) {
                     count++;
                     temp = temp->next_;
                 }
-                current->gap_ = count;
-                current = current->jump_;
+                head_->gap_ = count;
+            } else {
+                head_->gap_ = current->gap_ - 1;
             }
-        } else {
-            // Non-jump node - find containing segment and decrement its gap
-            Node* jumpNode = head_;
-            Node* containingJump = nullptr;
+        }
 
-            // Find the jump node whose segment contains target
-            while (jumpNode != nullptr) {
-                if (jumpNode->jump_ == nullptr || target->data_ < jumpNode->jump_->data_) {
-                    containingJump = jumpNode;
+        delete current;
+        return true;
+    }
+
+    // Case 2: Regular node removal
+    prev->next_ = current->next_;
+
+    // Handle jump node removal
+    if (isJumpNode) {
+        // Find previous jump node
+        Node* prevJumpNode = head_;
+        while (prevJumpNode->jump_ != current) {
+            prevJumpNode = prevJumpNode->jump_;
+        }
+
+        Node* nextJump = current->jump_;
+        prevJumpNode->jump_ = nextJump;
+
+        // Count nodes in merged segment
+        int mergedCount = 0;
+        Node* temp = prevJumpNode;
+        while (temp != nullptr && temp != nextJump) {
+            mergedCount++;
+            temp = temp->next_;
+        }
+
+        // Handle potential split
+        if (mergedCount > MAX_GAP_SIZE) {
+            int firstHalf = (mergedCount + 1) / 2;
+
+            // Find split point
+            temp = prevJumpNode;
+            for (int i = 1; i < firstHalf; i++) {
+                temp = temp->next_;
+            }
+
+            // Create new jump node
+            Node* newJump = temp->next_;
+            prevJumpNode->jump_ = newJump;
+            newJump->jump_ = nextJump;
+
+            // Update gap sizes
+            prevJumpNode->gap_ = firstHalf;
+            newJump->gap_ = mergedCount - firstHalf;
+        } else {
+            prevJumpNode->gap_ = mergedCount;
+        }
+    } else {
+        // Regular node removal - update containing segment's gap
+        Node* containingJump = head_;
+        while (containingJump != nullptr) {
+            Node* nextJump = containingJump->jump_;
+
+            // Check if current node is in this segment
+            Node* temp = containingJump;
+            bool inSegment = false;
+            while (temp != nextJump) {
+                if (temp == current) {
+                    inSegment = true;
                     break;
                 }
-                jumpNode = jumpNode->jump_;
+                if (temp == nullptr) break;
+                temp = temp->next_;
             }
 
-            if (containingJump != nullptr) {
+            if (inSegment) {
                 containingJump->gap_--;
+                break;
             }
+
+            containingJump = containingJump->jump_;
         }
     }
 
-    delete target;
+	// Update all remaining gaps after modification
+	Node* temp = head_;
+	while (temp != nullptr && temp->jump_ != nullptr) {
+		int count = 1;
+		Node* counter = temp;
+		// Add nullptr check before accessing next_
+		while (counter != nullptr && counter->next_ != nullptr && counter->next_ != temp->jump_) {
+			count++;
+			counter = counter->next_;
+		}
+		temp->gap_ = count;
+		temp = temp->jump_;
+	}
+
+	// Handle last segment if it exists
+	if (temp != nullptr) {
+		int lastCount = 1;
+		Node* counter = temp;
+		// Add nullptr check before accessing next_
+		while (counter != nullptr && counter->next_ != nullptr) {
+			lastCount++;
+			counter = counter->next_;
+		}
+		temp->gap_ = lastCount;
+	}
+
+    delete current;
     return true;
 }
