@@ -81,6 +81,17 @@ private:
 	             // you are allowed to add other members if you want
 
 	// you are allowed to add other member functions if you want
+	bool eraseHead(Node* oldHead);
+	void mergeSingleNodeSegment(Node* currentJump, Node* nodeToDelete);
+	void splitLargeSegment(Node* currentJump, int newGap);
+
+	void updateSegmentSizes(Node* jumpNode);
+	int calculateSegmentSize(Node* jumpNode);
+	void splitSegment(Node* jumpNode, int segmentSize);
+
+	void buildMainLine(string& mainLine, Node* current) const;
+	void buildJumpAndGapLines(const string& mainLine, string& jumpLine,
+							string& gapLine, Node* current) const;
 
 };
 
