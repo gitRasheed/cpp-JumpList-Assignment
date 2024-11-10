@@ -288,68 +288,121 @@ bool JumpList::insert(const string& s) {
 }
 
 bool JumpList::erase(const string& s) {
-	if (head_ == nullptr) return false;
+    if (head_ == nullptr) return false;
 
-	Node* previous = nullptr;
-	Node* current = head_;
+    // Use fast lane like in find()
+    Node* current = head_;
+    Node* previousJump = nullptr;
+    while (current->jump_ != nullptr && current->jump_->data_ < s) {
+        previousJump = current;
+        current = current->jump_;
+    }
 
-	while (current -> jump_ != nullptr && current -> jump_->data_ < s) {
-		current = current -> jump_;
-	}
+    // Find exact node
+    Node* previous = nullptr;
+    Node* target = current;
+    while (target != nullptr && target->data_ != s) {
+        previous = target;
+        target = target->next_;
+    }
 
-	while (current != nullptr && current -> data_ != s) {
-		previous = current;
-		current = current -> next_;
-	}
+    if (target == nullptr) return false;
 
-	if (current == nullptr) return false;
+    bool isJumpNode = (target->jump_ != nullptr);
 
-	bool isJumpNode = (current -> jump_ != nullptr);
+    // Handle head deletion
+    if (previous == nullptr) {
+        head_ = target->next_;
+        if (head_ != nullptr) {
+            if (isJumpNode) {
+                head_->jump_ = target->jump_;
+                // Calculate nodes to next jump or end
+                Node* temp = head_;
+                int count = 1;
+                while (temp->next_ != target->jump_) {
+                    count++;
+                    temp = temp->next_;
+                }
+                head_->gap_ = count;
+            } else {
+                Node* temp = head_;
+                int count = 1;
+                while (temp->next_ != nullptr) {
+                    count++;
+                    temp = temp->next_;
+                }
+                head_->gap_ = count;
+            }
+        }
+    } else {
+        previous->next_ = target->next_;
 
-	if (previous == nullptr) {
-		head_ = current -> next_;
-		if (head_ != nullptr) {
-			head_ -> jump_ = current -> jump_;
-			head_ -> gap_ = current -> gap_;
-		}
-	}
-	else {
-		previous -> next_ =  current -> next_;
+        if (isJumpNode) {
+            // Find previous jump node
+            Node* jumpNode = head_;
+            while (jumpNode->jump_ != target) {
+                jumpNode = jumpNode->jump_;
+            }
 
-		if (isJumpNode) {
-			Node* previousJump = head_;
-			while (previousJump -> jump_ != current) {
-				previousJump = previousJump -> jump_;
-			}
+            // Remove from jump sequence
+            jumpNode->jump_ = target->jump_;
 
-			previousJump -> jump_ = current -> jump_;
+            // Recalculate gaps after merging
+            Node* temp = jumpNode;
+            int segmentSize = 0;
+            while (temp != nullptr && temp != target->jump_) {
+                segmentSize++;
+                temp = temp->next_;
+            }
 
-			int newSize = 0;
-			Node* tmp = previousJump;
-			while (tmp != current -> jump_) {
-				if (tmp == nullptr) break;
-				newSize++;
-				tmp - tmp -> next_;
-			}
+            if (segmentSize > MAX_GAP_SIZE) {
+                // Split the segment
+                int firstHalf = (segmentSize + 1) / 2;
+                temp = jumpNode;
+                for (int i = 1; i < firstHalf; i++) {
+                    temp = temp->next_;
+                }
+                Node* newJump = temp->next_;
+                jumpNode->jump_ = newJump;
+                newJump->jump_ = target->jump_;
+                jumpNode->gap_ = firstHalf;
+                newJump->gap_ = segmentSize - firstHalf;
+            } else {
+                jumpNode->gap_ = segmentSize;
+            }
 
-			if (newSize > MAX_GAP_SIZE) {
-				int firstHalf = (newSize + 1) / 2;
-				tmp = previousJump;
-				for (int i=0; i < firstHalf; i++) {
-					tmp = tmp -> next_;
-				}
+            // Update remaining segments
+            Node* current = jumpNode->jump_;
+            while (current != nullptr) {
+                temp = current;
+                int count = 1;
+                while (temp->next_ != nullptr && temp->next_ != current->jump_) {
+                    count++;
+                    temp = temp->next_;
+                }
+                current->gap_ = count;
+                current = current->jump_;
+            }
+        } else {
+            // Non-jump node - find containing segment and decrement its gap
+            Node* jumpNode = head_;
+            Node* containingJump = nullptr;
 
-				tmp -> jump_ = current -> jump_;
-				previousJump -> jump_ = tmp;
-				tmp -> gap_ = newSize - firstHalf;
-				previousJump -> gap_ = firstHalf;
-			}
-			else {
-				previousJump -> gap_ = newSize;
-			}
-		}
-	}
+            // Find the jump node whose segment contains target
+            while (jumpNode != nullptr) {
+                if (jumpNode->jump_ == nullptr || target->data_ < jumpNode->jump_->data_) {
+                    containingJump = jumpNode;
+                    break;
+                }
+                jumpNode = jumpNode->jump_;
+            }
 
-		delete current;
-		return true;
+            if (containingJump != nullptr) {
+                containingJump->gap_--;
+            }
+        }
+    }
+
+    delete target;
+    return true;
 }
