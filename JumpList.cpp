@@ -212,7 +212,7 @@ string JumpList::prettyPrint() const {
 	return result + "\n" + second_line + "\n" + third_line;
 }
 
-Node* JumpList::findInsertionSegment(const string& s) const {
+Node* JumpList::findJumpNodeForInsert(const string& s) const {
 	Node* current = head_;
 	while (current->jump_ != nullptr && current->jump_->data_ < s) {
 		current = current->jump_;
@@ -242,22 +242,19 @@ int JumpList::calculateSegmentSize(Node* jumpNode) {
 	return size;
 }
 
-void JumpList::splitSegmentIfNeeded(Node* jumpNode, int segmentSize) {
+void JumpList::splitSegment(Node* jumpNode, int segmentSize) {
 	if (segmentSize > MAX_GAP_SIZE) {
-		int firstHalf = (segmentSize + 1) / 2;  // Make first half larger if odd
+		int firstHalf = (segmentSize + 1) / 2;
 
-		// Find new jump node position
 		Node* temp = jumpNode;
 		for (int i = 0; i < firstHalf - 1; i++) {
 			temp = temp->next_;
 		}
 
-		// Set up new jump node
 		Node* newJumpNode = temp->next_;
 		newJumpNode->jump_ = jumpNode->jump_;
 		jumpNode->jump_ = newJumpNode;
 
-		// Update gap sizes
 		newJumpNode->gap_ = segmentSize - firstHalf;
 		jumpNode->gap_ = firstHalf;
 	} else {
@@ -269,7 +266,7 @@ void JumpList::updateSegmentStructure() {
 	Node* jumpNode = head_;
 	while (jumpNode != nullptr) {
 		int segmentSize = calculateSegmentSize(jumpNode);
-		splitSegmentIfNeeded(jumpNode, segmentSize);
+		splitSegment(jumpNode, segmentSize);
 		jumpNode = jumpNode->jump_;
 	}
 }
@@ -279,37 +276,31 @@ bool JumpList::insert(const string& s) {
 
 	Node* newNode = new Node(s, nullptr, nullptr, 0);
 
-	// Handle empty list
 	if (head_ == nullptr) {
 		head_ = newNode;
 		head_->gap_ = 1;
 		return true;
 	}
 
-	// Handle insertion before head
 	if (s < head_->data_) {
 		newNode->next_ = head_;
 		newNode->gap_ = head_->gap_;
 		newNode->jump_ = head_->jump_;
 		head_ = newNode;
 	} else {
-		// Find correct segment and insertion point
-		Node* segmentStart = findInsertionSegment(s);
+		Node* segmentStart = findJumpNodeForInsert(s);
 		Node* insertPoint = findInsertionPoint(segmentStart, s);
 
-		// Insert the new node
 		newNode->next_ = insertPoint->next_;
 		insertPoint->next_ = newNode;
 	}
 
-	// Update segments and handle splits
 	updateSegmentStructure();
 
 	return true;
 }
 
-// Find jump node whose next jump node contains target string
-Node* JumpList::findJumpNodeWithNext(const string& s) const {
+Node* JumpList::findJumpNodeForErase(const string& s) const {
 	Node* currentJump = head_;
 	while (currentJump->jump_ != nullptr && currentJump->jump_->data_ <= s) {
 		if (currentJump->jump_->data_ == s) {
@@ -320,32 +311,26 @@ Node* JumpList::findJumpNodeWithNext(const string& s) const {
 	return currentJump;
 }
 
-// Handle merging segments and potential splitting after deleting a jump node
 void JumpList::mergeAndSplitSegments(Node* currentJump, Node* toDelete) {
-	// Special handling for size-1 segments
 	if (toDelete->gap_ == 1 && currentJump->gap_ == 1) {
 		currentJump->jump_ = toDelete->jump_;
-		currentJump->gap_ = 1;  // Keep gap as 1 for remaining segment
+		currentJump->gap_ = 1;
 
-		// Update next pointers
 		Node* previous = currentJump;
 		while (previous->next_ != toDelete) {
 			previous = previous->next_;
 		}
 		previous->next_ = toDelete->next_;
 	} else {
-		// Normal merge for larger segments
 		int newGap = currentJump->gap_ + toDelete->gap_ - 1;
 		currentJump->jump_ = toDelete->jump_;
 
-		// Update next pointers
 		Node* previous = currentJump;
 		while (previous->next_ != toDelete) {
 			previous = previous->next_;
 		}
 		previous->next_ = toDelete->next_;
 
-		// Check if split needed
 		if (newGap > MAX_GAP_SIZE) {
 			int firstHalf = (newGap + 1) / 2;
 			Node* newJump = currentJump;
@@ -362,7 +347,7 @@ void JumpList::mergeAndSplitSegments(Node* currentJump, Node* toDelete) {
 	}
 }
 
-Node* JumpList::findNodeInSegment(Node* segmentStart, const string& s) {
+Node* JumpList::findNodeToErase(Node* segmentStart, const string& s) {
 	Node* previous = segmentStart;
 	Node* current = segmentStart->next_;
 
@@ -396,7 +381,7 @@ bool JumpList::erase(const string& s) {
 		return true;
 	}
 
-	Node* currentJump = findJumpNodeWithNext(s);
+	Node* currentJump = findJumpNodeForErase(s);
 	if (currentJump->jump_ != nullptr && currentJump->jump_->data_ == s) {
 		Node* toDelete = currentJump->jump_;
 		mergeAndSplitSegments(currentJump, toDelete);
@@ -404,7 +389,7 @@ bool JumpList::erase(const string& s) {
 		return true;
 	}
 
-	Node* nodeToDelete = findNodeInSegment(currentJump, s);
+	Node* nodeToDelete = findNodeToErase(currentJump, s);
 	if (nodeToDelete == nullptr) return false;
 
 	Node* previous = currentJump;

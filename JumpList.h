@@ -10,7 +10,7 @@ class Node {
 	Node* next_;  // pointer to next node
 	Node* jump_;  // pointer to next jump node
 	int gap_;     // size of this segment
-	              // you are allowed to add other members if you want
+				  // you are allowed to add other members if you want
 public:
 	// Constructor
 	Node(const string& data, Node* next, Node* jump, int gap);
@@ -78,18 +78,18 @@ public:
 
 private:
 	Node* head_; // point to first node
-	             // you are allowed to add other members if you want
+				 // you are allowed to add other members if you want
 
 	// you are allowed to add other member functions if you want
-    [[nodiscard]] Node* findInsertionSegment(const string& s) const;
-    Node* findInsertionPoint(Node* segmentStart, const string& s);
-    void updateSegmentStructure();
-    static int calculateSegmentSize(Node* jumpNode) ;
-    static void splitSegmentIfNeeded(Node* jumpNode, int segmentSize);
+	[[nodiscard]] Node* findJumpNodeForInsert(const string& s) const;
+	Node* findInsertionPoint(Node* segmentStart, const string& s);
+	void updateSegmentStructure();
+	static int calculateSegmentSize(Node* jumpNode);
+	static void splitSegment(Node* jumpNode, int segmentSize);
 
-	[[nodiscard]] Node* findJumpNodeWithNext(const string& s) const;
-	static void mergeAndSplitSegments(Node* currJump, Node* toDelete);
-	static Node* findNodeInSegment(Node* segmentStart, const string& s) ;
+	[[nodiscard]] Node* findJumpNodeForErase(const string& s) const;
+	static void mergeAndSplitSegments(Node* currentJump, Node* toDelete);
+	static Node* findNodeToErase(Node* segmentStart, const string& s);
 };
 
 #endif
