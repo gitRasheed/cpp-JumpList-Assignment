@@ -309,7 +309,7 @@ Node* JumpList::findJumpNodeForErase(const string& s) const {
 	return currentJump;
 }
 
-void JumpList::mergeAndSplitSegments(Node* currentJump, Node* toDelete) {
+void JumpList::restructureSegmentAfterErase(Node* currentJump, Node* toDelete) {
 	if (toDelete->gap_ == 1 && currentJump->gap_ == 1) {
 		currentJump->jump_ = toDelete->jump_;
 		currentJump->gap_ = 1;
@@ -382,7 +382,7 @@ bool JumpList::erase(const string& s) {
 	Node* currentJump = findJumpNodeForErase(s);
 	if (currentJump->jump_ != nullptr && currentJump->jump_->data_ == s) {
 		Node* toDelete = currentJump->jump_;
-		mergeAndSplitSegments(currentJump, toDelete);
+		restructureSegmentAfterErase(currentJump, toDelete);
 		delete toDelete;
 		return true;
 	}

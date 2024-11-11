@@ -89,7 +89,7 @@ private:
 	static void splitSegment(Node* jumpNode, int segmentSize);
 
 	[[nodiscard]] Node* findJumpNodeForErase(const string& s) const;
-	static void mergeAndSplitSegments(Node* currentJump, Node* toDelete);
+	static void restructureSegmentAfterErase(Node* currentJump, Node* toDelete);
 	static Node* findNodeToErase(Node* segmentStart, const string& s);
 };
 
