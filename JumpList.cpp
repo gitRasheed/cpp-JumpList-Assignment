@@ -73,11 +73,11 @@ JumpList::~JumpList() {
 
 int JumpList::size() const {
 	int count = 0;
-
 	Node* current = head_;
+
 	while (current != nullptr) {
-		count++;
-		current = current->next_;
+		count += current->gap_;
+		current = current->jump_;
 	}
 	return count;
 }
