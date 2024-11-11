@@ -81,6 +81,7 @@ private:
 				 // you are allowed to add other members if you want
 
 	// you are allowed to add other member functions if you want
+	// i added helper functions to clean up the erase and insert process
 	[[nodiscard]] Node* findJumpNodeForInsert(const string& s) const;
 	Node* findInsertionPoint(Node* segmentStart, const string& s);
 	void updateSegmentStructure();
