@@ -21,7 +21,7 @@ JumpList::JumpList() {
 
 // DO NOT CHANGE
 // You do not need to understand the code here to complete the assignment
-JumpList::JumpList(const int size, const string* arr) {
+JumpList::JumpList(int size, const string* arr) {
 
 	const string s[] = {"a", "b", "blah", "c", "cat", "d", "etc", "ooo...", "x", "zzz"};
 	const string* sp = (arr == nullptr) ? s : arr;
