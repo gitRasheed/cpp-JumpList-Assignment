@@ -1,6 +1,4 @@
 #include "JumpList.h"
-
-#include <algorithm>
 #include <stdexcept>
 
 Node::Node(const string& s, Node* next, Node* jump, int gap) {
