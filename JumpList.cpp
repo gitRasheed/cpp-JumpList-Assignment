@@ -15,7 +15,6 @@ Node::~Node() {
 	jump_ = nullptr;
 }
 
-
 JumpList::JumpList() {
 	head_ = nullptr;
 }
@@ -71,7 +70,6 @@ JumpList::~JumpList() {
 		delete toDelete;
 	}
 }
-
 
 int JumpList::size() const {
 	int count = 0;
