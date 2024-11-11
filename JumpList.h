@@ -81,18 +81,15 @@ private:
 	             // you are allowed to add other members if you want
 
 	// you are allowed to add other member functions if you want
-	bool eraseHead(Node* oldHead);
-	void mergeSingleNodeSegment(Node* currentJump, Node* nodeToDelete);
-	void splitLargeSegment(Node* currentJump, int newGap);
+    [[nodiscard]] Node* findInsertionSegment(const string& s) const;
+    Node* findInsertionPoint(Node* segmentStart, const string& s);
+    void updateSegmentStructure();
+    static int calculateSegmentSize(Node* jumpNode) ;
+    static void splitSegmentIfNeeded(Node* jumpNode, int segmentSize);
 
-	void updateSegmentSizes(Node* jumpNode);
-	int calculateSegmentSize(Node* jumpNode);
-	void splitSegment(Node* jumpNode, int segmentSize);
-
-	void buildMainLine(string& mainLine, Node* current) const;
-	void buildJumpAndGapLines(const string& mainLine, string& jumpLine,
-							string& gapLine, Node* current) const;
-
+	[[nodiscard]] Node* findJumpNodeWithNext(const string& s) const;
+	static void mergeAndSplitSegments(Node* currJump, Node* toDelete);
+	static Node* findNodeInSegment(Node* segmentStart, const string& s) ;
 };
 
 #endif
